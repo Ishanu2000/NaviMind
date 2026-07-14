@@ -50,12 +50,28 @@ const PORT = process.env.PORT || 8787;
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const RETRYABLE_STATUSES = new Set([401, 403, 429]);
 
+// Per-token rate limit so one tester's code can't drain the shared key pool.
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_PER_TOKEN = 15;
+const rateLimitState = new Map(); // token -> { count, windowStart }
+
+function isRateLimited(token) {
+  const now = Date.now();
+  const entry = rateLimitState.get(token);
+  if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    rateLimitState.set(token, { count: 1, windowStart: now });
+    return false;
+  }
+  entry.count++;
+  return entry.count > RATE_LIMIT_MAX_PER_TOKEN;
+}
+
 let keyCursor = 0;
 
 function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };
 }
@@ -83,6 +99,12 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === "GET" && req.url === "/health") {
+    res.writeHead(200, { ...corsHeaders(), "Content-Type": "text/plain" });
+    res.end("ok");
+    return;
+  }
+
   if (req.method !== "POST" || req.url !== "/chat") {
     res.writeHead(404, corsHeaders());
     res.end("Not found");
@@ -100,6 +122,12 @@ const server = http.createServer(async (req, res) => {
     if (!TESTER_TOKENS.has(token)) {
       res.writeHead(401, corsHeaders());
       res.end("Invalid or missing tester access code");
+      return;
+    }
+
+    if (isRateLimited(token)) {
+      res.writeHead(429, corsHeaders());
+      res.end("Rate limit exceeded for this access code, slow down");
       return;
     }
 
