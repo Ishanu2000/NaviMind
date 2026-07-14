@@ -148,7 +148,14 @@ const server = http.createServer(async (req, res) => {
 
     try {
       const upstream = await forwardToGroq(payload);
-      res.writeHead(upstream.status, { ...corsHeaders(), "Content-Type": "text/event-stream" });
+      res.writeHead(upstream.status, {
+        ...corsHeaders(),
+        "Content-Type": "text/event-stream",
+        // Confirmed unnecessary in testing (Render/Cloudflare already streams
+        // incrementally), kept as cheap insurance against buffering under
+        // different response sizes/conditions.
+        "X-Accel-Buffering": "no",
+      });
       if (!upstream.body) {
         res.end();
         return;
