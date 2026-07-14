@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NaviMind</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#composer-input">Skip to question box</a>
+
+    <!-- ── Header ─────────────────────────────────────────────── -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 6 L15.5 15.5 L12 13 L8.5 15.5 Z" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand-name">NaviMind</span>
+      </div>
+      <div class="header-actions">
+        <button id="btn-reset" class="icon-btn" aria-label="Start a new conversation" title="New conversation">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button id="btn-a11y" class="icon-btn" aria-label="Accessibility options" title="Accessibility options" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="1.8" fill="currentColor" stroke="none"/><path d="M4.5 8.6c2.4 1 5 1.5 7.5 1.5s5.1-.5 7.5-1.5M12 10.1v4.9m0 0-3.5 7M12 15l3.5 7"/></svg>
+        </button>
+        <button id="btn-stats" class="icon-btn" aria-label="Usage & feedback" title="Usage & feedback">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </button>
+        <button id="btn-export" class="icon-btn" aria-label="Download chat as PDF" title="Download chat as PDF">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button id="btn-settings" class="icon-btn" aria-label="Open settings" title="Settings">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Page context strip ─────────────────────────────────── -->
+    <section class="page-context" aria-label="Current page">
+      <div class="pc-row">
+        <span class="pc-dot" aria-hidden="true"></span>
+        <span id="pc-title" class="pc-title" title="">Reading the current page…</span>
+      </div>
+      <div class="pc-row pc-meta">
+        <span id="pc-stats" class="pc-stats"></span>
+        <button id="btn-outline" class="link-btn" aria-expanded="false" aria-controls="outline-panel" hidden>
+          View outline
+        </button>
+        <button id="btn-refresh" class="link-btn" title="Re-read the page">Refresh</button>
+      </div>
+      <nav id="outline-panel" class="outline-panel" aria-label="Page outline" hidden></nav>
+    </section>
+
+    <!-- ── Quick actions ──────────────────────────────────────── -->
+    <div class="quick-actions" role="group" aria-label="Quick actions">
+      <button class="chip" data-action="summarize">Summarize</button>
+      <button class="chip" data-action="keypoints">Key points</button>
+      <button class="chip" data-action="outline">Outline</button>
+      <button class="chip" data-action="simplify">Explain simply</button>
+      <button class="chip" data-action="find">Find on page…</button>
+    </div>
+
+    <!-- ── Chat area (thread + composer share a centering context,
+         so the composer becomes a centered "hero" search bar on the
+         empty state, and docks to the bottom once messages exist) ── -->
+    <div class="chat-area">
+      <!-- ── Conversation thread ──────────────────────────────── -->
+      <main id="thread" class="thread route" role="log" aria-live="polite" aria-label="Conversation" tabindex="0">
+        <div class="empty-state" id="empty-state">
+          <span class="empty-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 8.94 10.06c-.06-.5.32-.94.82-.94H21a1 1 0 0 0 .78-1.62A9 9 0 0 0 12 3Z"/><circle cx="9" cy="12" r="0.8" fill="currentColor" stroke="none"/><circle cx="13" cy="12" r="0.8" fill="currentColor" stroke="none"/><circle cx="17" cy="12" r="0.8" fill="currentColor" stroke="none"/></svg>
+          </span>
+          <p class="empty-title">Hello
+            <svg class="hello-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M12 2 14 9 21 12 14 15 12 22 10 15 3 12 10 9 Z"/></svg>
+          </p>
+          <p class="empty-sub">Ask anything about this page, try “What is this page about?”, “List the pricing tiers”, or tap a quick action above.</p>
+        </div>
+      </main>
+
+      <!-- ── Composer ──────────────────────────────────────────── -->
+      <form id="composer" class="composer" aria-label="Ask a question">
+        <label class="sr-only" for="composer-input">Your question about this page</label>
+        <textarea id="composer-input" class="composer-input" rows="1"
+          placeholder="Ask about this page…" autocomplete="off"></textarea>
+        <button id="btn-mic" type="button" class="icon-btn mic" aria-label="Ask with your voice" title="Voice input">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+        <button id="btn-send" type="submit" class="send-btn" aria-label="Send question">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- ── Accessibility dialog ───────────────────────────────── -->
+    <div id="a11y-dialog" class="dialog-backdrop" hidden>
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="a11y-title">
+        <div class="dialog-head">
+          <h2 id="a11y-title">Accessibility</h2>
+          <button class="icon-btn" data-close aria-label="Close">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="dialog-body">
+          <div class="field">
+            <label for="font-scale">Text size</label>
+            <input type="range" id="font-scale" min="90" max="150" step="10" value="100" />
+            <output id="font-scale-out">100%</output>
+          </div>
+          <div class="field-row">
+            <label for="toggle-contrast">High contrast</label>
+            <input type="checkbox" id="toggle-contrast" class="switch" />
+          </div>
+          <div class="field-row">
+            <label for="toggle-theme">Dark mode</label>
+            <input type="checkbox" id="toggle-theme" class="switch" />
+          </div>
+          <div class="field-row">
+            <label for="toggle-autoread">Read answers aloud automatically</label>
+            <input type="checkbox" id="toggle-autoread" class="switch" />
+          </div>
+          <div class="field-row">
+            <label for="toggle-automic">Turn on microphone automatically when panel opens</label>
+            <input type="checkbox" id="toggle-automic" class="switch" />
+          </div>
+          <p class="hint">Every control here is keyboard-reachable. Answers are announced to screen readers as they arrive.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Stats & TAM dialog ─────────────────────────────────── -->
+    <div id="stats-dialog" class="dialog-backdrop" hidden>
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="stats-title">
+        <div class="dialog-head">
+          <h2 id="stats-title">Usage &amp; feedback</h2>
+          <button class="icon-btn" data-close aria-label="Close">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="dialog-body">
+          <div class="stat-grid">
+            <div class="stat"><span id="stat-queries" class="stat-num">0</span><span class="stat-label">Questions asked</span></div>
+            <div class="stat"><span id="stat-time" class="stat-num">–</span><span class="stat-label">Avg. response</span></div>
+            <div class="stat"><span id="stat-up" class="stat-num">0</span><span class="stat-label">Helpful</span></div>
+            <div class="stat"><span id="stat-down" class="stat-num">0</span><span class="stat-label">Not helpful</span></div>
+          </div>
+          <button id="btn-tam" class="btn-secondary">Take the acceptance survey (TAM)</button>
+          <button id="btn-reset-stats" class="link-btn danger">Reset metrics</button>
+
+          <!-- TAM survey -->
+          <form id="tam-form" class="tam" hidden>
+            <p class="hint">Rate each statement from 1 (strongly disagree) to 5 (strongly agree).</p>
+            <fieldset id="tam-fields"></fieldset>
+            <label class="sr-only" for="tam-comment">Anything else?</label>
+            <textarea id="tam-comment" rows="2" placeholder="Optional comment…"></textarea>
+            <button type="submit" class="btn-secondary">Submit survey</button>
+            <p id="tam-thanks" class="hint success" hidden>Thanks - your response was saved locally.</p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live region for status announcements (screen readers) -->
+    <div id="sr-status" class="sr-only" aria-live="assertive"></div>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

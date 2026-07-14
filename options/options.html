@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NaviMind - Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="card">
+      <header class="head">
+        <span class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 6 L15.5 15.5 L12 13 L8.5 15.5 Z" fill="currentColor"/></svg>
+        </span>
+        <div>
+          <h1>NaviMind settings</h1>
+          <p class="sub">NaviMind works out of the box using a shared AI service, paste the access code you were given below. Add your own API key instead if you want a different provider, model, or higher rate limits.</p>
+        </div>
+      </header>
+
+      <div class="field">
+        <label for="testerToken">Tester access code</label>
+        <input type="text" id="testerToken" placeholder="Paste the code you were given" autocomplete="off" spellcheck="false" />
+        <p class="hint">Required to use NaviMind's built-in AI service during testing. Not needed if you add your own API key below.</p>
+      </div>
+
+      <div class="field">
+        <label for="provider">AI provider</label>
+        <select id="provider">
+          <option value="gemini">Google Gemini - free tier ★</option>
+          <option value="groq">Groq - free, very fast</option>
+          <option value="openrouter">OpenRouter - free models</option>
+          <option value="openai">OpenAI (GPT)</option>
+          <option value="anthropic">Anthropic (Claude)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="apiKey">API key <span class="optional">(optional)</span></label>
+        <div class="key-row">
+          <input type="password" id="apiKey" placeholder="Leave blank to use the local proxy (run server/ first)" autocomplete="off" spellcheck="false" />
+          <button type="button" id="toggleKey" class="ghost" aria-label="Show or hide key">Show</button>
+        </div>
+        <p class="hint" id="keyHint"></p>
+      </div>
+
+      <div class="field">
+        <label for="model">Model <span class="optional">(optional)</span></label>
+        <input type="text" id="model" placeholder="" autocomplete="off" spellcheck="false" />
+        <p class="hint">Leave blank to use the recommended default for the selected provider.</p>
+      </div>
+
+      <div class="actions">
+        <button id="save" class="primary">Save settings</button>
+        <span id="saved" class="saved" hidden>Saved ✓</span>
+      </div>
+
+      <section class="privacy">
+        <h2>How your data is handled</h2>
+        <p>By default, your question is sent (with your access code) to a small proxy server which holds the shared Groq key and forwards the request to Groq. The key itself never reaches your browser or this extension's code, and your access code only identifies you to that proxy, not to Groq. If you enter your own API key, your browser talks directly to that provider instead, bypassing the proxy entirely, and the key is stored only in this browser (<code>chrome.storage.local</code>). Page content is sent only when you ask a question. Nothing is sent to NaviMind's authors.</p>
+      </section>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

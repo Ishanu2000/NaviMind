@@ -1,0 +1,13 @@
+{
+  "name": "navimind-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local proxy that holds the shared Groq keys server-side for NaviMind's zero-config mode.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
