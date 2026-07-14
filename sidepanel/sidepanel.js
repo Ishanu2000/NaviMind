@@ -309,12 +309,13 @@ const OPENAI_COMPATIBLE = {
   openrouter: "https://openrouter.ai/api/v1/chat/completions",
 };
 
-// Zero-config mode: route through a local proxy server (see server/) that
-// holds the shared Groq keys and does the rotation/failover. No key ever
-// ships in this file, so nothing can be extracted by installing or
-// unpacking the extension. Bringing your own key (any provider, via
-// Settings) bypasses the proxy and talks to that provider directly.
-const PROXY_URL = "http://localhost:8787/chat";
+// Zero-config mode: route through a hosted proxy server (see server/) that
+// holds the shared Groq keys and does the rotation/failover, gated by a
+// per-tester access code. No key ever ships in this file, so nothing can
+// be extracted by installing or unpacking the extension. Bringing your own
+// key (any provider, via Settings) bypasses the proxy and talks to that
+// provider directly.
+const PROXY_URL = "https://navimind.onrender.com/chat";
 const DEFAULT_SETTINGS = { provider: "groq", apiKey: null, model: DEFAULT_MODELS.groq };
 
 function getEffectiveSettings() {

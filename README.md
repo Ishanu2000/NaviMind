@@ -38,27 +38,26 @@ Kelaniya).
 
 ## Zero-config mode (proxy + tester access codes)
 
-NaviMind works with no setup via a small proxy that holds a shared Groq key
-pool, so testers can install the extension and start asking questions
-immediately - no API key required. Access is gated by a per-tester code so
-random people who find the proxy URL can't burn the shared Groq quota.
+NaviMind works with no setup via a small proxy (deployed at
+`https://navimind.onrender.com`) that holds a shared Groq key pool, so
+testers can install the extension and start asking questions immediately -
+no API key required. Access is gated by a per-tester code so random people
+who find the proxy URL can't burn the shared Groq quota.
 
-**Run it locally:**
+**For testers:** just paste your assigned code into NaviMind's Settings
+("Tester access code") and start asking questions. Nothing else to install.
+
+**For local dev**, run the proxy on your own machine instead of using the
+deployed one:
 1. `cd server`
 2. Copy `keys.example.js` to `keys.local.js` and fill in real Groq key(s).
 3. Copy `tokens.example.js` to `tokens.local.js` and fill in one access code
    per tester. Both `*.local.js` files are gitignored - never commit them.
 4. `npm start` (requires Node 18+; no dependencies to install)
-5. Leave it running in the background - the side panel talks to
-   `http://localhost:8787` automatically whenever no personal API key is set.
+5. Update `PROXY_URL` in `sidepanel/sidepanel.js` to `http://localhost:8787/chat`.
 
-**Deployed (Render, etc.):** set the `GROQ_KEYS` and `TESTER_TOKENS`
-environment variables (both comma-separated) in the host's dashboard instead
-of using the `*.local.js` files - see `server/server.js` for details.
-
-Each tester pastes their assigned code into NaviMind's Settings ("Tester
-access code"). Neither the Groq keys nor the tester codes ever ship in the
-extension's JS, so they can't be extracted by installing or unpacking it.
+Neither the Groq keys nor the tester codes ever ship in the extension's JS,
+so they can't be extracted by installing or unpacking it.
 
 ## Connect your own AI provider (optional)
 
