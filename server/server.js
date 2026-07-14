@@ -89,17 +89,20 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  const auth = req.headers["authorization"] || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
-  if (!TESTER_TOKENS.has(token)) {
-    res.writeHead(401, corsHeaders());
-    res.end("Invalid or missing tester access code");
-    return;
-  }
-
   let raw = "";
   req.on("data", (chunk) => (raw += chunk));
   req.on("end", async () => {
+    // Drain the request body before writing any response, even for auth
+    // failures - ending the response early can make a reverse proxy (e.g.
+    // Render/Cloudflare) reset the connection instead of delivering it.
+    const auth = req.headers["authorization"] || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+    if (!TESTER_TOKENS.has(token)) {
+      res.writeHead(401, corsHeaders());
+      res.end("Invalid or missing tester access code");
+      return;
+    }
+
     let body;
     try {
       body = JSON.parse(raw);
