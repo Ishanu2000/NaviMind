@@ -51,29 +51,55 @@ const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const RETRYABLE_STATUSES = new Set([401, 403, 429]);
 
 // Per-token rate limit so one tester's code can't drain the shared key pool.
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_PER_TOKEN = 15;
+// RATE_LIMIT is requests per token per rolling hour.
+const RATE_LIMIT = Number(process.env.RATE_LIMIT) || 60;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+// In-memory only: resets when the Render free instance restarts or sleeps
+// (~15 min idle). Acceptable for a single-instance user-study deployment -
+// not durable across restarts and not shared across multiple instances.
 const rateLimitState = new Map(); // token -> { count, windowStart }
 
-function isRateLimited(token) {
+function checkRateLimit(token) {
   const now = Date.now();
   const entry = rateLimitState.get(token);
   if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
     rateLimitState.set(token, { count: 1, windowStart: now });
-    return false;
+    return { limited: false };
   }
   entry.count++;
-  return entry.count > RATE_LIMIT_MAX_PER_TOKEN;
+  if (entry.count <= RATE_LIMIT) return { limited: false };
+  const remainingMs = RATE_LIMIT_WINDOW_MS - (now - entry.windowStart);
+  return {
+    limited: true,
+    retryAfterSeconds: Math.ceil(remainingMs / 1000),
+    minutesRemaining: Math.ceil(remainingMs / 60000),
+  };
 }
 
 let keyCursor = 0;
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
+// If ALLOWED_ORIGINS (comma-separated) is set, only those exact origins are
+// allowed. Otherwise any chrome-extension:// origin is accepted, since
+// unpacked extensions get a random ID per machine, so a specific ID can't be
+// pinned by default without breaking on every other machine that loads it.
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
+  : null;
+
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS) return ALLOWED_ORIGINS.includes(origin);
+  return origin.startsWith("chrome-extension://");
+}
+
+function corsHeaders(origin) {
+  const headers = {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Vary": "Origin",
   };
+  if (isAllowedOrigin(origin)) headers["Access-Control-Allow-Origin"] = origin;
+  return headers;
 }
 
 async function forwardToGroq(payload) {
@@ -93,20 +119,25 @@ async function forwardToGroq(payload) {
 }
 
 const server = http.createServer(async (req, res) => {
+  const origin = req.headers.origin;
+
   if (req.method === "OPTIONS") {
-    res.writeHead(204, corsHeaders());
+    res.writeHead(204, corsHeaders(origin));
     res.end();
     return;
   }
 
+  // No auth, no rate limit, no origin check - uptime pingers and the study
+  // operator's pre-session warmup ping send no Origin header at all, and
+  // must still get through to wake the Render free instance.
   if (req.method === "GET" && req.url === "/health") {
-    res.writeHead(200, { ...corsHeaders(), "Content-Type": "text/plain" });
-    res.end("ok");
+    res.writeHead(200, { ...corsHeaders(origin), "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true }));
     return;
   }
 
   if (req.method !== "POST" || req.url !== "/chat") {
-    res.writeHead(404, corsHeaders());
+    res.writeHead(404, corsHeaders(origin));
     res.end("Not found");
     return;
   }
@@ -114,20 +145,27 @@ const server = http.createServer(async (req, res) => {
   let raw = "";
   req.on("data", (chunk) => (raw += chunk));
   req.on("end", async () => {
-    // Drain the request body before writing any response, even for auth
-    // failures - ending the response early can make a reverse proxy (e.g.
+    // Drain the request body before writing any response, even for
+    // rejections - ending the response early can make a reverse proxy (e.g.
     // Render/Cloudflare) reset the connection instead of delivering it.
+    if (!isAllowedOrigin(origin)) {
+      res.writeHead(403, corsHeaders(origin));
+      res.end("Origin not allowed");
+      return;
+    }
+
     const auth = req.headers["authorization"] || "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
     if (!TESTER_TOKENS.has(token)) {
-      res.writeHead(401, corsHeaders());
+      res.writeHead(401, corsHeaders(origin));
       res.end("Invalid or missing tester access code");
       return;
     }
 
-    if (isRateLimited(token)) {
-      res.writeHead(429, corsHeaders());
-      res.end("Rate limit exceeded for this access code, slow down");
+    const rate = checkRateLimit(token);
+    if (rate.limited) {
+      res.writeHead(429, { ...corsHeaders(origin), "Retry-After": String(rate.retryAfterSeconds) });
+      res.end(`Rate limit exceeded for this access code. Try again in ${rate.minutesRemaining} minute(s).`);
       return;
     }
 
@@ -135,7 +173,7 @@ const server = http.createServer(async (req, res) => {
     try {
       body = JSON.parse(raw);
     } catch {
-      res.writeHead(400, corsHeaders());
+      res.writeHead(400, corsHeaders(origin));
       res.end("Invalid JSON");
       return;
     }
@@ -149,11 +187,12 @@ const server = http.createServer(async (req, res) => {
     try {
       const upstream = await forwardToGroq(payload);
       res.writeHead(upstream.status, {
-        ...corsHeaders(),
+        ...corsHeaders(origin),
         "Content-Type": "text/event-stream",
-        // Confirmed unnecessary in testing (Render/Cloudflare already streams
-        // incrementally), kept as cheap insurance against buffering under
-        // different response sizes/conditions.
+        // Render/Cloudflare already streamed incrementally in testing without
+        // this, but it's free insurance against buffering under different
+        // response sizes or proxy behavior - FR5 depends on word-by-word
+        // delivery, so this stays even though it wasn't strictly required.
         "X-Accel-Buffering": "no",
       });
       if (!upstream.body) {
@@ -168,7 +207,7 @@ const server = http.createServer(async (req, res) => {
       }
       res.end();
     } catch (err) {
-      res.writeHead(502, corsHeaders());
+      res.writeHead(502, corsHeaders(origin));
       res.end("Proxy error: " + err.message);
     }
   });

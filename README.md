@@ -59,6 +59,23 @@ deployed one:
 Neither the Groq keys nor the tester codes ever ship in the extension's JS,
 so they can't be extracted by installing or unpacking it.
 
+**Proxy environment variables** (set in Render's dashboard, or a local `.env`
+equivalent for `server/`):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `GROQ_KEYS` | *(required)* | Comma-separated Groq API keys, rotated with failover. |
+| `TESTER_TOKENS` | *(required)* | Comma-separated per-tester access codes. |
+| `RATE_LIMIT` | `60` | Max `/chat` requests per token per rolling hour. Limit is in-memory, so it resets if the Render instance restarts or sleeps - acceptable for a single-instance study deployment, not durable across restarts. |
+| `ALLOWED_ORIGINS` | *(unset)* | Comma-separated exact origins allowed to call `/chat`. If unset, any `chrome-extension://` origin is accepted, since unpacked extensions get a random ID per machine and can't be pinned by default. |
+| `PORT` | `8787` | Port the proxy listens on. |
+
+**`GET /health`** returns `200 {"ok":true}` with no auth and no rate limit -
+Render's free tier sleeps after ~15 min idle, so **ping this endpoint before
+each user-study session** (e.g. `curl https://navimind.onrender.com/health`)
+to warm the instance and keep cold-start latency out of your response-time
+data.
+
 ## Connect your own AI provider (optional)
 
 Skip this if you're using zero-config mode. Bring your own key if you want a
@@ -99,13 +116,16 @@ navimind/
 ├── background.js            # service worker (opens panel, injects extractor)
 ├── content/
 │   ├── extractor.js         # Readability-style page analysis (Objective 1)
-│   └── content-script.js    # message bridge + find/highlight on page
+│   ├── content-script.js    # message bridge + find/highlight on page
+│   └── promo-card.js        # first-visit "try smart navigation" card
 ├── sidepanel/
 │   ├── sidepanel.html       # accessible UI
 │   ├── sidepanel.css        # "wayfinding" design system
-│   └── sidepanel.js         # chat, AI providers, voice, a11y, metrics, TAM
+│   ├── sidepanel.js         # chat, AI providers, voice, a11y, metrics, TAM
+│   ├── export.html          # printable chat export page
+│   └── export.js            # renders the exported chat as PDF-ready HTML
 ├── options/                 # provider + key settings
-├── server/                  # local proxy for zero-config mode (holds shared keys)
+├── server/                  # proxy for zero-config mode (deployed on Render)
 ├── icons/                   # extension icons
 └── docs/OBJECTIVES.md       # how the build maps to the proposal
 ```
